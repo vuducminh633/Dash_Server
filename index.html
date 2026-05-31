@@ -1,0 +1,146 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ABR Video — Telemetry Dashboard</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        body { font-family: system-ui, sans-serif; background: #fff; color: #222; padding: 16px; }
+        h1   { font-size: 1.1rem; color: #555; margin-bottom: 12px; }
+
+        .top-row { display: flex; gap: 16px; margin-bottom: 16px; align-items: flex-start; }
+
+        .video-wrap { display: flex; flex-direction: column; width: 640px; }
+        video { width: 640px; background: #000; border: 1px solid #ccc; border-bottom: none; display: block; }
+
+        /* ── progress bar (display-only, no seeking) ── */
+        .seek-wrap {
+            width: 640px; background: #1a1a1a; padding: 8px 10px 6px;
+            box-sizing: border-box;
+            border: 1px solid #ccc; border-top: none;
+        }
+        .seek-controls { display: flex; align-items: center; gap: 10px; margin-top: 7px; }
+        .ctrl-btn {
+            padding: 2px 10px; background: transparent; color: #ddd;
+            border: 1px solid #555; border-radius: 3px; cursor: pointer; font-size: 0.8rem;
+        }
+        .ctrl-btn:hover { background: #333; }
+        .time-display { color: #aaa; font-size: 0.78rem; font-family: monospace; }
+        .seek-track {
+            position: relative; height: 4px; background: #555;
+            border-radius: 2px; cursor: default;
+        }
+        .seek-wrap:hover .seek-track { height: 6px; transition: height 0.12s; }
+        .seek-buffer {
+            position: absolute; left: 0; height: 100%;
+            background: #999; border-radius: 2px; width: 0; pointer-events: none;
+        }
+        .seek-played {
+            position: absolute; left: 0; height: 100%;
+            background: #2563eb; border-radius: 2px; width: 0; pointer-events: none;
+        }
+        .seek-thumb {
+            position: absolute; width: 12px; height: 12px;
+            background: #2563eb; border-radius: 50%;
+            top: 50%; transform: translate(-50%, -50%);
+            left: 0; pointer-events: none;
+            opacity: 0; transition: opacity 0.12s;
+        }
+        .seek-wrap:hover .seek-thumb { opacity: 1; }
+
+        /* metric rows like dash.js inspector */
+        .metrics-box { border: 1px solid #ddd; border-radius: 4px; padding: 12px; font-size: 0.88rem; }
+        .metrics-box h3 { font-size: 0.75rem; text-transform: uppercase; color: #2563eb; letter-spacing: 0.06em; margin-bottom: 8px; }
+        .metric-row { display: flex; justify-content: space-between; padding: 3px 0; border-bottom: 1px solid #f0f0f0; }
+        .metric-row:last-child { border-bottom: none; }
+        .metric-label { color: #555; }
+        .metric-val   { font-weight: 600; color: #111; }
+
+        button {
+            padding: 8px 20px; background: #2563eb; color: #fff;
+            border: none; border-radius: 4px; cursor: pointer; font-size: 0.9rem;
+        }
+        button:hover:not(:disabled) { background: #1d4ed8; }
+        button:disabled { background: #aaa; cursor: not-allowed; }
+
+        /* chart */
+        .chart-box { border: 1px solid #ddd; border-radius: 4px; padding: 12px; margin-bottom: 16px; }
+        .chart-box h3 { font-size: 0.75rem; text-transform: uppercase; color: #2563eb; letter-spacing: 0.06em; margin-bottom: 8px; }
+
+        /* log table */
+        .log-box { border: 1px solid #ddd; border-radius: 4px; padding: 12px; }
+        .log-box h3 { font-size: 0.75rem; text-transform: uppercase; color: #2563eb; letter-spacing: 0.06em; margin-bottom: 8px; }
+        .log-scroll { max-height: 220px; overflow-y: auto; }
+        table { width: 100%; border-collapse: collapse; font-size: 0.8rem; font-family: monospace; }
+        thead th { position: sticky; top: 0; background: #f8f8f8; color: #555; text-align: left; padding: 5px 8px; border-bottom: 1px solid #ddd; font-size: 0.72rem; text-transform: uppercase; }
+        tbody td { padding: 4px 8px; border-bottom: 1px solid #f3f3f3; }
+        tbody tr:hover { background: #f9f9f9; }
+    </style>
+</head>
+<body>
+
+    <h1>ABR Video Telemetry Dashboard</h1>
+
+    <div class="top-row">
+
+        <div class="video-wrap">
+            <video id="video-player"></video>
+            <div class="seek-wrap">
+                <div class="seek-track" id="seekTrack">
+                    <div class="seek-buffer" id="seekBuffer"></div>
+                    <div class="seek-played" id="seekPlayed"></div>
+                    <div class="seek-thumb"  id="seekThumb"></div>
+                </div>
+                <div class="seek-controls">
+                    <button class="ctrl-btn" id="playPauseBtn">&#9654;</button>
+                    <span class="time-display" id="timeDisplay">0:00 / 0:00</span>
+                </div>
+            </div>
+        </div>
+
+        <div class="side-panel">
+
+            <div class="metrics-box">
+                <h3>Playback Metrics</h3>
+                <div class="metric-row"><span class="metric-label">Buffer Level</span>    <span id="m-buffer"  class="metric-val">0.0 s</span></div>
+                <div class="metric-row"><span class="metric-label">Quality</span>          <span id="m-quality" class="metric-val">480p</span></div>
+                <div class="metric-row"><span class="metric-label">Current Speed</span>    <span id="m-speed"   class="metric-val">0 kbps</span></div>
+            </div>
+
+            <div class="metrics-box">
+                <h3>Quality of Experience</h3>
+                <div class="metric-row"><span class="metric-label">Quality Switches</span> <span id="q-switches" class="metric-val">0</span></div>
+                <div class="metric-row"><span class="metric-label">Stalls</span>            <span id="q-stalls"   class="metric-val">0</span></div>
+                <div class="metric-row"><span class="metric-label">Avg Bitrate</span>       <span id="q-avgbr"    class="metric-val">0 kbps</span></div>
+            </div>
+
+            <button id="startBtn">▶ Start Playback</button>
+
+        </div>
+    </div>
+
+    <div class="chart-box">
+        <h3>Metrics Chart</h3>
+        <canvas id="telemetryChart" height="100"></canvas>
+    </div>
+
+    <div class="log-box">
+        <h3>Chunk Delivery Log</h3>
+        <div class="log-scroll">
+            <table>
+                <thead>
+                    <tr>
+                        <th>Time</th><th>#</th><th>Folder</th>
+                        <th>Raw (Mbps)</th><th>EMA Est. (Mbps)</th>
+                        <th>Buffer (s)</th><th>Decision</th>
+                    </tr>
+                </thead>
+                <tbody id="logBody"></tbody>
+            </table>
+        </div>
+    </div>
+
+    <script type="module" src="script.js"></script>
+</body>
+</html>
