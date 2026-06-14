@@ -19,17 +19,17 @@ export const TOTAL_CHUNKS = 64; // fallback only, MPD parsing overrides this
 export const SAFETY_MARGIN = 0.75;
 
 // Fetch more chunks when buffered play-time drops below this threshold (seconds).
-export const BUFFER_LOW_THRESHOLD = 4;
+export const BUFFER_LOW_THRESHOLD = 10;
 
 // Stop fetching once the buffer is this full (seconds).
 // Kept intentionally short (8 s) so that when the connection improves,
 // the player only has to play through ~4 s of old low-quality content
 // before it can start fetching at the new higher quality.
-export const BUFFER_HIGH_TARGET = 8;
+export const BUFFER_HIGH_TARGET = 24;
 
 // Asymmetric EMA weights for bandwidth estimation.
 // Drop fast (high alpha), rise slowly (low alpha) — conservative ABR behaviour.
-export const EMA_ALPHA_DOWN = 0.5;
+export const EMA_ALPHA_DOWN = 0.85;
 export const EMA_ALPHA_UP   = 0.15;
 
 // How often the telemetry ticker refreshes the dashboard (ms).

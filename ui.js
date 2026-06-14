@@ -21,25 +21,24 @@ const chart = new Chart(
             labels: Array(MAX_CHART_POINTS).fill(''),
             datasets: [
                 {
-                    label: 'EMA Bandwidth Estimate (Mbps)',
-                    borderColor: '#4ade80',
+                    label: 'Network Bandwidth (Mbps)',
+                    borderColor: '#4ade80', // Green
                     backgroundColor: 'rgba(74, 222, 128, 0.08)',
                     data: Array(MAX_CHART_POINTS).fill(null),
                     fill: true,
-                    tension: 0.35,
+                    tension: 0.35, // Smooth curves for organic network speed
                     pointRadius: 0,
                     borderWidth: 2,
                 },
                 {
-                    label: 'Last Chunk Speed (Mbps)',
-                    borderColor: '#60a5fa',
-                    backgroundColor: 'rgba(96, 165, 250, 0.08)',
+                    label: 'Video Bitrate (Mbps)',
+                    borderColor: '#a855f7', // Purple
+                    backgroundColor: 'rgba(168, 85, 247, 0.08)',
                     data: Array(MAX_CHART_POINTS).fill(null),
                     fill: true,
-                    tension: 0.1,
-                    pointRadius: 4,
-                    pointHoverRadius: 6,
-                    borderWidth: 1.5,
+                    stepped: true, // Creates strict "steps" because video tiers are exact!
+                    pointRadius: 0,
+                    borderWidth: 2,
                 },
             ],
         },
@@ -50,19 +49,18 @@ const chart = new Chart(
             scales: {
                 y: {
                     beginAtZero: true,
-                    suggestedMax: 6,
-                    ticks: {
-                        color: '#555',
+                    max: 3, // HARD LIMIT: The graph will never scale higher than 3 Mbps
+                    ticks: { 
+                        color: '#555', 
                         callback: v => v.toFixed(1) + ' M',
+                        stepSize: 0.5 // Forces clean grid lines every 500k
                     },
                     grid: { color: 'rgba(0,0,0,0.06)' },
                 },
                 x: { display: false },
             },
             plugins: {
-                legend: {
-                    labels: { color: '#333', usePointStyle: true },
-                },
+                legend: { labels: { color: '#333', usePointStyle: true } },
                 tooltip: {
                     callbacks: {
                         label: ctx => ` ${ctx.dataset.label}: ${ctx.parsed.y?.toFixed(3)} Mbps`,
@@ -74,18 +72,14 @@ const chart = new Chart(
 );
 
 // ── Chart updater ─────────────────────────────────────────────────────────────
-// Called once per second by the telemetry ticker in script.js.
-
-export function pushToChart(bandwidthMbps, rawSpeedMbps) {
+export function pushToChart(networkMbps, videoMbps) {
     chart.data.datasets[0].data.shift();
-    chart.data.datasets[0].data.push(+bandwidthMbps.toFixed(3));
+    chart.data.datasets[0].data.push(networkMbps > 0 ? +networkMbps.toFixed(3) : null);
 
     chart.data.datasets[1].data.shift();
-    // Only push a raw point when there's a real measurement (non-zero).
-    // Null keeps the line gapped rather than showing a zero dip.
-    chart.data.datasets[1].data.push(rawSpeedMbps > 0 ? +rawSpeedMbps.toFixed(3) : null);
+    chart.data.datasets[1].data.push(videoMbps > 0 ? +videoMbps.toFixed(3) : null);
 
-    chart.update('none'); // 'none' disables per-frame animation for perf
+    chart.update('none'); 
 }
 
 // ── Metric panel ─────────────────────────────────────────────────────────────

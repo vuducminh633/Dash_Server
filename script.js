@@ -255,8 +255,8 @@ async function fetchNextChunk() {
         }
 
         // ── 6. Update QoE state ───────────────────────────────────────────────
-        const rawKbps = Math.round(rawMbps * 1000);
-        state.totalChunkKbpsSum += rawKbps;
+        const chunkVideoKbps = chosen.bitrateMbps * 1000;
+        state.totalChunkKbpsSum += chunkVideoKbps;
         state.chunksDelivered++;
 
         // ── 7. Snapshot buffer level and write log row ────────────────────────
@@ -327,14 +327,15 @@ setInterval(() => {
 
     state.bufferLevelSeconds = getBufferLevel();
 
-    const quality     = QUALITY_LEVELS.find(q => q.folder === state.currentQuality)
-                        ?? QUALITY_LEVELS[0];
-    const avgKbps     = state.chunksDelivered > 0
+    // Figure out exactly which quality tier is currently playing
+    const quality = QUALITY_LEVELS.find(q => q.folder === state.currentQuality) ?? QUALITY_LEVELS[0];
+    
+    const avgKbps = state.chunksDelivered > 0
         ? Math.round(state.totalChunkKbpsSum / state.chunksDelivered)
         : 0;
 
-    // Push one data point to the live chart
-    pushToChart(state.estimatedBandwidthMbps, state.lastRawMeasuredMbps);
+    // Push the network EMA and the exact Video Bitrate to the chart!
+    pushToChart(state.estimatedBandwidthMbps, quality.bitrateMbps);
 
     updateMetricPanel({
         bufferLevel      : state.bufferLevelSeconds,
