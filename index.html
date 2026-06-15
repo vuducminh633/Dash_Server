@@ -14,7 +14,7 @@
         .video-wrap { display: flex; flex-direction: column; width: 640px; }
         video { width: 640px; background: #000; border: 1px solid #ccc; border-bottom: none; display: block; }
 
-        /* ── progress bar (display-only, no seeking) ── */
+        /* progress bar (display-only, no seeking) */
         .seek-wrap {
             width: 640px; background: #1a1a1a; padding: 8px 10px 6px;
             box-sizing: border-box;
@@ -50,6 +50,7 @@
         .seek-wrap:hover .seek-thumb { opacity: 1; }
 
         /* metric rows like dash.js inspector */
+        .side-panel { display: flex; flex-direction: column; gap: 12px; width: 280px; }
         .metrics-box { border: 1px solid #ddd; border-radius: 4px; padding: 12px; font-size: 0.88rem; }
         .metrics-box h3 { font-size: 0.75rem; text-transform: uppercase; color: #2563eb; letter-spacing: 0.06em; margin-bottom: 8px; }
         .metric-row { display: flex; justify-content: space-between; padding: 3px 0; border-bottom: 1px solid #f0f0f0; }
@@ -64,8 +65,9 @@
         button:hover:not(:disabled) { background: #1d4ed8; }
         button:disabled { background: #aaa; cursor: not-allowed; }
 
-        /* chart */
-        .chart-box { border: 1px solid #ddd; border-radius: 4px; padding: 12px; margin-bottom: 16px; }
+        /* charts layout */
+        .charts-row { display: flex; gap: 16px; margin-bottom: 16px; }
+        .chart-box { border: 1px solid #ddd; border-radius: 4px; padding: 12px; flex: 1; }
         .chart-box h3 { font-size: 0.75rem; text-transform: uppercase; color: #2563eb; letter-spacing: 0.06em; margin-bottom: 8px; }
 
         /* log table */
@@ -83,7 +85,6 @@
     <h1>ABR Video Telemetry Dashboard</h1>
 
     <div class="top-row">
-
         <div class="video-wrap">
             <video id="video-player"></video>
             <div class="seek-wrap">
@@ -100,11 +101,11 @@
         </div>
 
         <div class="side-panel">
-
             <div class="metrics-box">
                 <h3>Playback Metrics</h3>
                 <div class="metric-row"><span class="metric-label">Buffer Level</span>    <span id="m-buffer"  class="metric-val">0.0 s</span></div>
-                <div class="metric-row"><span class="metric-label">Quality</span>          <span id="m-quality" class="metric-val">480p</span></div>
+                <div class="metric-row"><span class="metric-label">Quality Tier</span>    <span id="m-quality" class="metric-val">480p</span></div>
+                <div class="metric-row"><span class="metric-label">Objective PSNR</span>  <span id="m-psnr"    class="metric-val">0.00 dB</span></div>
                 <div class="metric-row"><span class="metric-label">Current Speed</span>    <span id="m-speed"   class="metric-val">0 kbps</span></div>
             </div>
 
@@ -116,13 +117,18 @@
             </div>
 
             <button id="startBtn">▶ Start Playback</button>
-
         </div>
     </div>
 
-    <div class="chart-box">
-        <h3>Metrics Chart</h3>
-        <canvas id="telemetryChart" height="100"></canvas>
+    <div class="charts-row">
+        <div class="chart-box">
+            <h3>Network Telemetry Chart</h3>
+            <canvas id="telemetryChart" height="120"></canvas>
+        </div>
+        <div class="chart-box">
+            <h3>Codec Structural Quality (PSNR Benchmarks)</h3>
+            <canvas id="psnrChart" height="120"></canvas>
+        </div>
     </div>
 
     <div class="log-box">

@@ -5,11 +5,11 @@
 // The ABR engine picks the highest tier whose bitrateMbps fits within
 // the safe bandwidth budget (estimatedBandwidth * SAFETY_MARGIN).
 export const QUALITY_LEVELS = [
-    { folder: 'very_low_res', bitrateMbps: 0.08,  label: '144p'  },
-    { folder: 'low_res',      bitrateMbps: 0.254, label: '240p'  },
-    { folder: 'mid_res',      bitrateMbps: 0.76,  label: '480p'  },
-    { folder: 'high_res',     bitrateMbps: 1.884, label: '720p'  },
-    { folder: 'ultra_res',    bitrateMbps: 4.953, label: '1080p' },
+    { folder: 'very_low_res', bitrateMbps: 0.08,  label: '144p',  psnr: 29.81 },
+    { folder: 'low_res',      bitrateMbps: 0.254, label: '240p',  psnr: 32.03 },
+    { folder: 'mid_res',      bitrateMbps: 0.76,  label: '480p',  psnr: 35.32 },
+    { folder: 'high_res',     bitrateMbps: 1.884, label: '720p',  psnr: 38.97 },
+    { folder: 'ultra_res',    bitrateMbps: 4.953, label: '1080p', psnr: 45.61 },
 ];
 
 export const TOTAL_CHUNKS = 64; // fallback only, MPD parsing overrides this
